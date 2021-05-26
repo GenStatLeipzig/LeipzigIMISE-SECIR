@@ -1,2 +1,2 @@
 # LeipzigIMISE-SECIR
-Modelling
+Modelling COVID-19
