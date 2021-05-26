@@ -1,0 +1,16 @@
+names;val;units;part
+parsim_label;4;.;system
+delt;1;.;math
+r81;0;1/days;treat
+delaylock;2;1/days;treat
+nsympt;2;.;system
+delayunlock;2;1/days;treat
+unlockinflux;0;1/days;treat
+DelayData;0;days;system
+wecumul;0,2;.;math
+deldistrgam;0;.;math
+parsim_treat;1;.;system
+crit_prior_num;12;.;system
+death_prior_num;11;.;system
+deltapcritpdeath;2;days;treat
+dynam_we;10;.;treat

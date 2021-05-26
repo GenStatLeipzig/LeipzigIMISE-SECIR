@@ -1,0 +1,17 @@
+"Name";"Val"
+"Nbest";1
+"adj";5e-05
+"num_it";5
+"num_it_u";150
+"num_ann";0
+"display";1
+"err_orient";1
+"update_1";1,5
+"update_2";2
+"eps_min";7e-04
+"ref_err_min";0
+"LB";-31
+"UB";20
+"eps_init";0,1
+"LB_resid";0
+"UB_resid";1e+07
