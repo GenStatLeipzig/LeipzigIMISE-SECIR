@@ -2,9 +2,11 @@ rm(list = ls())
 library(Rcpp)
 #root_path <- "F:/2003_covid_modell"
 #root_path <- "D:/2003_covid_modell"
-root_path <- "R:/modellclub/2003_covid_modell"
-path_code<-paste(root_path,'/StochODEMS_YK/',sep='')#working path, yuri
-path_code<-paste(root_path,'/github/LeipzigIMISE-SECIR/scripte/',sep='')#working path
+#root_path <- "R:/modellclub/2003_covid_modell"
+root_path <- "R:/modellclub/2003_covid_modell/github/LeipzigIMISE-SECIR"
+#path_code<-paste(root_path,'/StochODEMS_YK/',sep='')#working path, yuri
+#path_code<-paste(root_path,'/github/LeipzigIMISE-SECIR/scripte/',sep='')#working path Sandra
+path_code<-paste(root_path,'/scripte/',sep='')#working path Sandra
 setwd(path_code)
 source("LoadCOVIDFunct1.R")
 label_data <- 'LandMuKIAdv'#'LandMuPolyKIAdv'
@@ -15,7 +17,7 @@ ind_indiv <- 1#9  #1-Deutschland, 9 - Sachsen
 helpstr <- AdvancedLoad(path_code,root_path,label_data, label_clean,  ind_indiv = ind_indiv, inputdec = '.' )
 ###main structure, governing simulations
 main_struct0 <- helpstr$main_struct
-main_struct0$resultspath<- path_code<-paste(root_path,'/github/LeipzigIMISE-SECIR/results/',sep='')
+main_struct0$resultspath<- path_code<-paste(root_path,'/results/',sep='')
 ### "stochastic object2- structure, dwetermines time steps. Our model can also be stochastic (not now, in perspective)
 stoch_obj0 <- helpstr$stoch_obj0
 
