@@ -918,7 +918,7 @@ nnlfromxtot<-function(xtot,main_struct, ind_indiv)
   {
     main_struct$muonedose <- 1
     main_struct$muvariant <- 'proportional'
-    #main_struct0$model_opt <- 31#mutant compartments
+    #main_struct$model_opt <- 31#mutant compartments
     sim_res<-SimCOVIDStochasticPolyMuKIAdvTreat(xtot,main_struct,ind_indiv)
     sim_res<-NamePolyOutput(sim_res_poly,main_struct)
   }else
@@ -932,7 +932,7 @@ nnlfromxtot<-function(xtot,main_struct, ind_indiv)
       #sim_res<-SimCOVIDStochasticAdvTreat(xtot,main_struct,ind_indiv)
       #Rcpp!!!!:
       sim_res<-SimulCppCovidModel(param_,xtot,ind_indiv,main_struct)
-      #sim_res<-SimulCppCovidModelIndiv(param_,xtot,ind_indiv,main_struct0)
+      #sim_res<-SimulCppCovidModelIndiv(param_,xtot,ind_indiv,main_struct)
     }else{
       sim_res<-SimCOVIDStochastic(xtot,main_struct,ind_indiv)#ind_indiv=1
     }
@@ -1025,8 +1025,9 @@ nnlfromxtot<-function(xtot,main_struct, ind_indiv)
   simdailydeathIs2<- c(0,sim_res[1:(xtot$num_steps-1),'ISc2']*param_$r8*spdeath_v[2:(xtot$num_steps)])#c(0,(sim_res_long1$ISc2[1:(stoch_obj0$num_steps-1)]*param_$r8*spdeath_v[2:(stoch_obj0$num_steps)]))
   simdailydeathCrit<- c(0,(sim_res[2:(xtot$num_steps),'pdeath']*param_$r8*sim_res[1:(xtot$num_steps-1),'Cc1']))
   fr_Is2 <- sum( simdailydeathIs2)/(sum( simdailydeathIs2)+sum(simdailydeathCrit))
-  out_$add_penalty <- ((fr_Is2-0.5)/0.05)^2
-  out_$nLL_tot<- out_$nLL_tot+ out_$add_penalty
+  ##??? do not remember!!! 27.05.2021
+  #out_$add_penalty <- ((fr_Is2-0.5)/0.05)^2
+  #out_$nLL_tot<- out_$nLL_tot+ out_$add_penalty
   ##consistency:
   out_$co_term<-0
   if("death_int1"%in%names(param_))
@@ -1116,7 +1117,9 @@ GoalFuncComp<-function(xtot,main_struct, opt_mod, label_opt,nLL_indiv,ind_indiv1
   ygoalf$dates_cumul  <- sol_$dates_cumul
   
   ygoalf$prior <- sol_$prior
-  ygoalf$add_penalty <- sol_$add_penalty
+  #ygoalf$add_penalty <- sol_$add_penalty
+  ygoalf$co_term <- sol_$co_term
+  ygoalf$unrealpdeath <- sol_$unrealpdeath
   ygoalf
 }
 InitUpdate <- function(xtot,main_struct)
@@ -1221,7 +1224,7 @@ CollectPredictions <- function(predt,xtot,outpop,main_struct,stoch_obj0,ind_indi
   {
     #sim_res_best<-SimCOVIDStochasticAdvTreat(xtot,main_struct,ind_indiv)
     #Rcpp:
-    #sim_res<-SimulCppCovidModelIndiv(param_,xtot,ind_indiv,main_struct0)
+    #sim_res<-SimulCppCovidModelIndiv(param_,xtot,ind_indiv,main_struct)
     param_<- IndivUpdateParam(x=xtot$phiopt,ind_indiv,main_struct,param_=main_struct$param_)
     sim_res_best<-SimulCppCovidModel(param_,xtot,ind_indiv,main_struct)
   }else{
@@ -1254,7 +1257,7 @@ CollectPredictions <- function(predt,xtot,outpop,main_struct,stoch_obj0,ind_indi
       {
         #sim_res<-SimCOVIDStochasticAdvTreat(xtot,main_struct,ind_indiv)
         #Rcpp:
-        #sim_res<-SimulCppCovidModelIndiv(param_,xtot,ind_indiv,main_struct0)
+        #sim_res<-SimulCppCovidModelIndiv(param_,xtot,ind_indiv,main_struct)
         param_<- IndivUpdateParam(x=xtot$phiopt,ind_indiv,main_struct,param_=main_struct$param_)
         sim_res<-SimulCppCovidModel(param_,xtot,ind_indiv,main_struct)
       }else{
@@ -2985,4 +2988,89 @@ ShiftLogicalVector <- function(x,del)
   x[(first_t-del):(first_t-1)]<-TRUE
   x[(length(x)-(del-1)):length(x)]<- FALSE
   return(x)
+}
+CompareLimits<-function(x,ind_indiv,main_struct)
+{  
+  
+  if(main_struct$numindivpar1>0)
+  {  
+    limits_d<- array(dim=c(main_struct$num_estim_indiv[ind_indiv],5))
+    for(ind_par in 1:main_struct$num_estim_indiv[ind_indiv])
+    {
+      # print(ind_par)
+      namei <- main_struct$names_indiv_opt_parameters[[ind_indiv]][ind_par]#main_struct$names[main_struct$subs_indivi_num[[ind_indiv]]][ind_par]
+      transformed_par <- TransformParameters(x[ind_par],main_struct,namei)
+      param_[[namei]]<-transformed_par
+      ind1 <- which(main_struct$names==namei)
+      transform_label <-toString(main_struct$transform_label[ind1])
+      if(transform_label=='0')
+      {
+        limits_d[ind_par,]<-c(param_[[namei]],-Inf,Inf)
+      }else if(transform_label=='1')
+      {
+        limits_d[ind_par,]<-c(param_[[namei]],param_[[namei]],Inf,1,Inf)
+      }else if(transform_label=='2')
+      {
+        limits_d[ind_par,]<-c(param_[[namei]],param_[[namei]]-main_struct$LB[ind1],main_struct$UB[ind1]-param_[[namei]],(param_[[namei]]-main_struct$LB[ind1])/param_[[namei]],(main_struct$UB[ind1]-param_[[namei]])/param_[[namei]])
+      }
+    }
+  }
+  colnames(limits_d)<-c('param','LB','UB','RLB','RUB')
+  rownames(limits_d) <- main_struct$names_indiv_opt_parameters[[ind_indiv]]
+  return(limits_d)
+}
+PerturbPar<-function(x,delt,ind_indiv,par_name,main_struct,transform_opt,rel_opt)
+{
+  out_ <-x
+  #ind1<- which(main_struct$names==par_name)
+  ind_par <-(1:main_struct$num_estim_indiv[ind_indiv])[main_struct$names_indiv_opt_parameters[[ind_indiv]]==par_name]
+  if(transform_opt==1)
+  {
+    if(rel_opt==0)
+    {  
+      out_[ind_par]<-x[ind_par]+delt
+    }else if(rel_opt==1)
+    {
+      out_[ind_par]<-x[ind_par]*delt
+    }
+  }else{
+    transformed_par <- TransformParameters(x[ind_par],main_struct,par_name)
+    if(rel_opt==0)
+    {
+      transformed_par1<- transformed_par+delt
+    }else if(rel_opt==1)
+    {
+      transformed_par1<- transformed_par*delt
+    }
+    out_[ind_par] <- RevTransformParameters(transformed_par1,main_struct,par_name)
+    
+  }
+  return(out_)
+}
+Sensitivanalysis<-function(xtot,delt,ind_indiv,main_struct,transform_opt,rel_opt)
+{
+  goalf0<-GoalFuncComp(xtot=xtot,main_struct=main_struct,opt_mod=opt_mod,label_opt=label_opt,
+                       nLL_indiv=rep.int(x=0,times=main_struct$numindiv),ind_indiv1=ind_indiv)
+  xtot0<-xtot
+  sensitivity_r<- array(dim=c(main_struct$num_estim_indiv[ind_indiv],6))
+  for(ind_par in 1:main_struct$num_estim_indiv[ind_indiv])
+  {
+    # print(ind_par)
+    namei <- main_struct$names_indiv_opt_parameters[[ind_indiv]][ind_par]#main_struct$names[main_struct$subs_indivi_num[[ind_indiv]]][ind_par]
+    print(namei)
+    xpert <-PerturbPar(x=xtot$phiopt$indiv[[ind_indiv]],delt=delt,ind_indiv,par_name=namei,main_struct,transform_opt=0,rel_opt=1)
+    xtot<- UpdateParam(x=xpert,ind_indiv,xtot,stoch_obj0,main_struct)
+    goalf1<-GoalFuncComp(xtot=xtot,main_struct=main_struct,opt_mod=opt_mod,label_opt=label_opt,
+                         nLL_indiv=rep.int(x=0,times=main_struct$numindiv),ind_indiv1=ind_indiv)
+    sensitivity_r[ind_par,1] <- goalf1$nLL_tot-goalf0$nLL_tot
+    sensitivity_r[ind_par,2] <- goalf1$prior-goalf0$prior
+    sensitivity_r[ind_par,3] <- goalf1$co_term-goalf0$co_term
+    sensitivity_r[ind_par,4] <- goalf1$unrealpdeath-goalf0$unrealpdeath
+    sensitivity_r[ind_par,5] <- goalf1$qresid_term-goalf0$qresid_term
+    sensitivity_r[ind_par,6] <- goalf1$qresid_term_cumul-goalf0$qresid_term_cumul
+    xtot <- xtot0
+  }
+  colnames(sensitivity_r)<-c('nLL_tot','prior','bad_intervals','unrealpdeath','qresid','qresid_cumul')
+  rownames(sensitivity_r) <- main_struct$names_indiv_opt_parameters[[ind_indiv]]
+  return(sensitivity_r)
 }
